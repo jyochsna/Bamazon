@@ -17,7 +17,7 @@ connection.connect(function(err) {
   });
   
   function makeTable() {
-    // Displaying an initial list of products for the user, calling promptSupervisor
+    
     connection.query("SELECT * FROM products", function(err, res) {
       if (err) throw err;
       console.table(res);
@@ -26,7 +26,7 @@ connection.connect(function(err) {
   }
   
   function askSupervisor() {
-    // Giving the user some options for what to do next
+  
     inquirer
       .prompt([
         {
@@ -70,13 +70,13 @@ connection.connect(function(err) {
         }
       ])
       .then(function(val) {
-        // Using the information the user provided to create a new department
+        
         connection.query(
           "INSERT INTO departments (department_name, over_head_costs) VALUES (?, ?)",
           [val.name, val.overhead],
           function(err) {
             if (err) throw err;
-            // If successful, alert the user, run makeTable again
+           
             console.log("ADDED DEPARTMENT!");
             makeTable();
           }
@@ -84,24 +84,4 @@ connection.connect(function(err) {
       });
   }
   
-  function viewSales() {
-    // Selects a few columns from the departments table, calculates a total_profit column
-    connection.query(
-      " SELECT " +
-      "   d.department_id, " +
-      "   d.department_name, " +
-      "   d.over_head_costs, " +
-      "   SUM(IFNULL(p.product_sales, 0)) as product_sales, " +
-      "   SUM(IFNULL(p.product_sales, 0)) - d.over_head_costs as total_profit " +
-      "FROM products p " +
-      "   RIGHT JOIN departments d ON p.department_name = d.department_name " +
-      "GROUP BY " +
-      "   d.department_id, " +
-      "   d.department_name, " +
-      "   d.over_head_costs",
-      function(err, res) {
-        console.table(res);
-        askSupervisor();
-      }
-    );
-  }
+  
