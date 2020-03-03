@@ -12,20 +12,9 @@ var connection = mysql.createConnection({
 
 connection.connect(function(err) {
     if (err) throw err;
-    console.log("connection successful!");
-    makeTable();
+   
   });
   
-  function makeTable() {
-    
-    connection.query("SELECT * FROM products", function(err, res) {
-      if (err) throw err;
-      console.table(res);
-      askSupervisor();
-    });
-  }
-  
-  function askSupervisor() {
   
     inquirer
       .prompt([
@@ -36,9 +25,9 @@ connection.connect(function(err) {
           choices: ["View Product Sales by Department", "Create New Department", "Quit"]
         }
       ])
-      .then(function(val) {
+      .then(function(answers) {
         // Checking to see what option the user chose and running the appropriate function
-        if (val.choice === "View Product Sales by Department") {
+        if (answers.choice === "View Product Sales by Department") {
           viewSales();
         }
         else if (val.choice === "Create New Department") {
@@ -49,7 +38,7 @@ connection.connect(function(err) {
           process.exit(0);
         }
       });
-  }
+  
   
   function addDepartment() {
     // Asking the user about the department they would like to add
@@ -68,20 +57,44 @@ connection.connect(function(err) {
             return val > 0;
           }
         }
-      ])
-      .then(function(val) {
-        
-        connection.query(
-          "INSERT INTO departments (department_name, over_head_costs) VALUES (?, ?)",
-          [val.name, val.overhead],
-          function(err) {
+      ]).then(function(answer){
+        connection.query("INSERT INTO departments SET ?", 
+        {
+            department_name: answer.name,
+            over_head_costs: answer.cost
+        }, function(err, res){
             if (err) throw err;
-           
-            console.log("ADDED DEPARTMENT!");
-            makeTable();
-          }
-        );
-      });
-  }
-  
+        })
+        connection.query("SELECT * FROM departments", function (err, res){
+            if (err) throw err;
+
+            var table = new Table({
+                head: ["department_id", "department_name", "over_head_costs"]
+            });
+
+            for (var i = 0; i < res.length; i++){
+                table.push([res[i].department_id, res[i].department_name, res[i].over_head_costs])
+            }
+            console.log("Your updates!")
+            console.log(table.toString());
+        })
+    })
+
+};
+      
+  function viewSales() {
+    //join select statement
+    connection.query("SELECT department_id, d.department_name, over_head_costs, sum(product_sales) AS product_sales, (sum(product_sales) - over_head_costs) AS total_profit FROM departments d INNER JOIN products p ON d.department_name = p.department_name GROUP BY department_name", function(err, res){
+        if (err) throw err;
+        //set up table head
+        var table = new Table({
+            head: ["department_id", "department_name", "over_head_costs", "products_sales", "total_profits"]
+        });
+        //cycle through res and print out values in table
+        for (var i = 0; i < res.length; i++) {
+            table.push([res[i].department_id, res[i].department_name, res[i].over_head_costs, res[i].product_sales, res[i].total_profit])
+        }
+        console.log(table.toString());
+    })
+}
   
